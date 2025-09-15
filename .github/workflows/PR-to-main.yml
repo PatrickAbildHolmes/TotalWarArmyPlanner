@@ -55,12 +55,12 @@ jobs:
           file: Dockerfile_frontend
           push: false
           load: true
-          tags: pholm15/TWAP_frontend:latest
+          tags: pholm15/twap_frontend:latest
         
       - name: Run Trivy vulnerability scanner on frontend 
         uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: 'pholm15/TWAP_frontend:latest'
+          image-ref: 'pholm15/twap_frontend:latest'
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
@@ -74,12 +74,12 @@ jobs:
           file: Dockerfile_backend
           push: false
           load: true
-          tags: pholm15/TWAP_backend:latest
+          tags: pholm15/twap_backend:latest
         
       - name: Run Trivy vulnerability scanner on backend 
         uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: 'pholm15/TWAP_backend:latest'
+          image-ref: 'pholm15/twap_backend:latest'
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
@@ -119,7 +119,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            pholm15/TWAP_frontend
+            pholm15/twap_frontend
           # generate Docker tags based on the following events/attributes
           tags: |
             type=ref,event=pr
@@ -134,7 +134,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            pholm15/TWAP_backend
+            pholm15/twap_backend
           # generate Docker tags based on the following events/attributes
           tags: |
             type=ref,event=pr
@@ -152,7 +152,7 @@ jobs:
           push: true
           tags: ${{ steps.meta-frontend.outputs.tags }}
           labels: ${{ steps.meta-frontend.outputs.labels }}
-          cache-from: type=registry,ref=pholm15/TWAP_frontend:latest
+          cache-from: type=registry,ref=pholm15/twap_frontend:latest
           cache-to: type=inline
 
       - name: Build and push backend image
@@ -163,7 +163,7 @@ jobs:
           push: true
           tags: ${{ steps.meta-backend.outputs.tags }}
           labels: ${{ steps.meta-backend.outputs.labels }}
-          cache-from: type=registry,ref=pholm15/TWAP_backend:latest
+          cache-from: type=registry,ref=pholm15/twap_backend:latest
           cache-to: type=inline
         
 #  deploy:
