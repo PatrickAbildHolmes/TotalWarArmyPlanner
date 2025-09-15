@@ -1,0 +1,80 @@
+name: Development on non-main branches
+# Lints and tests that images build successfully
+on:
+  push:
+    branches-ignore: [ "main" ]
+    branches: [ "**" ]
+
+jobs:
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          
+      - name: Run linting on go backend
+        uses: golangci/golangci-lint-action@v8
+        with:
+          working-directory: backend
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: frontend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json') }}
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run linting on react frontend
+        working-directory: frontend
+        run: npx eslint . --ext .js,.jsx,.ts,.tsx
+
+  docker-build:
+    needs: [linting]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile_frontend
+          push: false
+          cache-from: type=registry,ref=pholm15/TWAP_frontend:latest
+          cache-to: type=inline
+
+      - name: Build backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile_backend
+          push: false
+          cache-from: type=registry,ref=pholm15/TWAP_backend:latest
+          cache-to: type=inline
+        
+#  availability-test:
+#    needs: [docker-build]
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout repository
+#        uses: actions/checkout@v4
+#      - name: Build test-version with Docker Compose
+#        run: |
+#            docker compose up -d --wait
+#            curl --fail --max-time 10 http://localhost:5000/availability_test
+#      - name: Clean-up
+#        run: docker compose down
