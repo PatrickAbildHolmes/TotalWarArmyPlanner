@@ -3,7 +3,6 @@ name: Development on non-main branches
 on:
   push:
     branches-ignore: [ "main" ]
-    branches: [ "**" ]
 
 jobs:
   linting:
