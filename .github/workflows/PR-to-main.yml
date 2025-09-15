@@ -1,0 +1,177 @@
+name: Merging changes into main branch
+on: workflow_dispatch # remove 'workflow_dispatch' and uncomment when ready
+#  push:
+#    branches: [ "main" ]
+#  pull_request:
+#    branches: [ "main" ]
+    
+jobs:
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          
+      - name: Run linting on go backend
+        uses: golangci/golangci-lint-action@v8
+        with:
+          working-directory: backend
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: frontend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json') }}
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run linting on react frontend
+        working-directory: frontend
+        run: npx eslint . --ext .js,.jsx,.ts,.tsx
+          
+  trivy-scan:
+    runs-on: ubuntu-latest
+    needs: [linting]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile_frontend
+          push: false
+          load: true
+          tags: pholm15/TWAP_frontend:latest
+        
+      - name: Run Trivy vulnerability scanner on frontend 
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: 'pholm15/TWAP_frontend:latest'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+        
+      - name: Build backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile_backend
+          push: false
+          load: true
+          tags: pholm15/TWAP_backend:latest
+        
+      - name: Run Trivy vulnerability scanner on backend 
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: 'pholm15/TWAP_backend:latest'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+          
+#  availability-test:
+#    needs: [trivy-scan]
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout repository
+#        uses: actions/checkout@v4
+#      - name: Build test-version with Docker Compose
+#        run: |
+#            docker compose up -d --wait
+#            curl --fail --max-time 10 http://localhost:5000/availability_test
+#      - name: Clean-up
+#        run: docker compose down
+
+  publish_images:
+#    needs: [availability-test]
+    needs: [trivy-scan]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Docker meta frontend
+        id: meta-frontend
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            pholm15/TWAP_frontend
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
+            type=raw,value=latest
+
+      - name: Docker meta backend
+        id: meta-backend
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            pholm15/TWAP_backend
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
+            type=raw,value=latest
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile_frontend
+          push: true
+          tags: ${{ steps.meta-frontend.outputs.tags }}
+          labels: ${{ steps.meta-frontend.outputs.labels }}
+          cache-from: type=registry,ref=pholm15/TWAP_frontend:latest
+          cache-to: type=inline
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile_backend
+          push: true
+          tags: ${{ steps.meta-backend.outputs.tags }}
+          labels: ${{ steps.meta-backend.outputs.labels }}
+          cache-from: type=registry,ref=pholm15/TWAP_backend:latest
+          cache-to: type=inline
+        
+#  deploy:
+#    runs-on: ubuntu-latest
+#    needs: [publish_images]
+#    steps:
+#      - name: Checkout repository
+#        uses: actions/checkout@v4
+#      - run: echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig
+#      - run: kubectl --kubeconfig kubeconfig apply -f ./kubernetes_config
+#      - run: curl http://<address-of-cluster>
