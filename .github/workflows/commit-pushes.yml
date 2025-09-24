@@ -47,8 +47,8 @@ jobs:
       - name: Build frontend image
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: Dockerfile_frontend
+          context: ./frontend
+          file: Dockerfile
           push: false
           cache-from: type=registry,ref=pholm15/TWAP_frontend:latest
           cache-to: type=inline
@@ -56,8 +56,8 @@ jobs:
       - name: Build backend image
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: Dockerfile_backend
+          context: ./backend
+          file: Dockerfile
           push: false
           cache-from: type=registry,ref=pholm15/TWAP_backend:latest
           cache-to: type=inline

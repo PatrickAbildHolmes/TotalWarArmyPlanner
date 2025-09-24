@@ -48,8 +48,8 @@ jobs:
       - name: Build frontend image
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: Dockerfile_frontend
+          context: ./frontend
+          file: Dockerfile
           push: false
           load: true
           tags: pholm15/twap_frontend:latest
@@ -67,8 +67,8 @@ jobs:
       - name: Build backend image
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: Dockerfile_backend
+          context: ./backend
+          file: Dockerfile
           push: false
           load: true
           tags: pholm15/twap_backend:latest
