@@ -48,8 +48,8 @@ jobs:
       - name: Build frontend image
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: Dockerfile_frontend
+          context: ./frontend
+          file: ./frontend/Dockerfile
           push: false
           load: true
           tags: pholm15/twap_frontend:latest
@@ -67,8 +67,8 @@ jobs:
       - name: Build backend image
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: Dockerfile_backend
+          context: ./backend
+          file: ./backend/Dockerfile
           push: false
           load: true
           tags: pholm15/twap_backend:latest
@@ -144,8 +144,8 @@ jobs:
       - name: Build and push frontend image
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: Dockerfile_frontend
+          context: ./frontend
+          file: ./frontend/Dockerfile
           push: true
           tags: ${{ steps.meta-frontend.outputs.tags }}
           labels: ${{ steps.meta-frontend.outputs.labels }}
@@ -155,8 +155,8 @@ jobs:
       - name: Build and push backend image
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: Dockerfile_backend
+          context: ./backend
+          file: ./backend/Dockerfile
           push: true
           tags: ${{ steps.meta-backend.outputs.tags }}
           labels: ${{ steps.meta-backend.outputs.labels }}
