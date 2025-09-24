@@ -11,15 +11,16 @@ My hope is that it will prove useful as a neat planning utility for Singleplayer
 ### Frontend
 ```bash
 cd frontend
-npm run dev --port=5000 --host=0.0.0.0
+npm run dev --port=8000 --host=0.0.0.0
 ```
 ### Backend
 ```bash
 cd backend
-go run backend
+dotnet publish -c Release -o ./publish
+dotnet ./publish/backend.dll
 ```
 ### Database
-
+PostgreSQL. Handled exclusively through Docker.
 ## How to install
 ### Frontend
 Navigate to frontend folder and install dependencies:
@@ -35,17 +36,19 @@ apt-get install -y nodejs
 ### Backend
 ```bash
 cd backend
-go build backend
+dotnet restore
+dotnet build -c Release
+dotnet publish -c Release -o ./publish
 ```
 ## Architecture
-Frontend is coded ReactJS. <br>
-Follows MVC, on a Go backend with a NoSQL database. <br>
+Frontend is built with Vite, using the React template. <br>
+Backend is built with .NET, from the Web API template. <br>
 FE/BE/DB kept separate for good separation of concerns and easy containerization.
 
 ## Purpose
 The main purpose of this project is twofold:
 * To provide a tool for the Total War community, SP and MP, to plan and share army compositions
-* Personal experience with web development in a new language (Go)
+* Personal experience with web development in a new language (C#/.NET)
 
 ## Other useful information
 This project relies on large amounts of unit information and pictures from the game pack files, 

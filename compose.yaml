@@ -1,63 +1,31 @@
-name: TotalWarArmyPlanner
+﻿name: TotalWarArmyPlanner
 
 services:
-  frontend:
-    container_name: frontend_container
-    depends_on:
-      - backend
-#    image: pholm15/TWAP-frontend:latest
-    build:
-      context: .
-      dockerfile: Dockerfile_frontend
+  
+  backend:
+    build: ./backend
     ports:
       - "5000:5000"
     environment:
-      - BACKEND_DNS=backend
+      - ASPNETCORE_URLS=http://+:5000
+      - ConnectionStrings__Default=Host=database;Port=5432;Database=devdb;Username=postgres;Password=postgres
 
-  backend:
-    container_name: backend_container
-    depends_on:
-      - database
-#    image: pholm15/TWAP-backend:latest
-    build:
-      context: .
-      dockerfile: Dockerfile_backend
+  frontend:
+    build: ./frontend
     ports:
-      - "9000:9000"
-    environment:
-      - DB_DNS=database
-
-  reverse_proxy:
-    image: nginx:latest
-    container_name: nginx_container
-    depends_on:
-      - frontend
-    ports:
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./cert.pem:/etc/nginx/ssl/fullchain.pem:ro
-      - ./key.pem:/etc/nginx/ssl/privkey.pem:ro
+      - "8000:8000"
+    command: ["npm", "run", "dev"]
 
   database:
-    image: mongo:8.0
-    container_name: database_container
+    image: postgres:16
     restart: always
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: $MONGO_ROOT_USERNAME
-      MONGO_INITDB_ROOT_PASSWORD: $MONGO_ROOT_PASSWORD
+    environment: 
+      POSTGRES_PASSWORD: postgres 
+      POSTGRES_DB: devdb
     volumes:
-      - mongo-data:/data/db
-      - mongo-config:/data/configdb
-
-networks:
-  default:
-    driver: bridge
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
 
 volumes:
-  mongo-data:
-    driver: local
-  mongo-config:
-    driver: local
+  postgres_data:
