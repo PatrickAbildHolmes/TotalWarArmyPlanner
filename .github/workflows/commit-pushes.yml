@@ -10,16 +10,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        
-      - name: Setup go
-        uses: actions/setup-go@v5
+
+      - name: .NET Lint
+        uses: zyactions/dotnet-lint@v1
         with:
-          go-version: stable
-          
-      - name: Run linting on go backend
-        uses: golangci/golangci-lint-action@v8
-        with:
-          working-directory: backend
+          workspace: backend
+          implicit-restore: true
+          exclude: frontend
           
       - name: Setup Node.js
         uses: actions/setup-node@v4
